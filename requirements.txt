@@ -1,0 +1,1 @@
+# Für den lokalen Python-Server werden aktuell keine externen Python-Pakete benötigt.

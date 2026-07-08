@@ -121,31 +121,12 @@ Kontrollwerte des derzeitigen Datensatzes:
 
 ## Installation
 
-### Voraussetzungen
-
-- Python 3.10 oder neuer
-- moderner Browser
-- Node.js oder pnpm, falls die lokalen Browser-Abhängigkeiten neu installiert werden sollen
-
-Für den Python-Server werden keine externen Python-Pakete benötigt.
-
-### Abhängigkeiten installieren
-
-Die Browser-Bibliothek Leaflet wird über `package.json` verwaltet.
-
-Mit npm:
-
 ```powershell
-npm install
+git clone https://github.com/DEIN-NAME/eisenzeit-netzwerk-labor.git
+cd eisenzeit-netzwerk-labor
+pip install -r requirements.txt
+python server.py
 ```
-
-Mit pnpm:
-
-```powershell
-pnpm install
-```
-
-Wenn `node_modules/leaflet` bereits vorhanden ist, ist keine erneute Installation erforderlich.
 
 ## Start
 

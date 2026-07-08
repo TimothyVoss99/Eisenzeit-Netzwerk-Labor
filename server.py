@@ -17,7 +17,7 @@ import model
 
 ROOT = Path(__file__).resolve().parent
 APP_DIR = ROOT / "app"
-LEAFLET_DIR = ROOT / "node_modules" / "leaflet" / "dist"
+VENDOR_DIR = APP_DIR / "vendor"
 SAVED_SCENARIO = ROOT / "data" / "saved_scenario.json"
 MAX_POST_BYTES = 25 * 1024 * 1024
 
@@ -131,13 +131,13 @@ class Handler(BaseHTTPRequestHandler):
             self.file_response(APP_DIR / "index.html")
             return
         if path == "/vendor/leaflet.css":
-            self.file_response(LEAFLET_DIR / "leaflet.css")
+            self.file_response(VENDOR_DIR / "leaflet.css")
             return
         if path == "/vendor/leaflet.js":
-            self.file_response(LEAFLET_DIR / "leaflet.js")
+            self.file_response(VENDOR_DIR / "leaflet.js")
             return
         if path.startswith("/vendor/images/"):
-            self.file_response(LEAFLET_DIR / "images" / Path(path).name)
+            self.file_response(VENDOR_DIR / "images" / Path(path).name)
             return
         relative = path.lstrip("/")
         candidate = (APP_DIR / relative).resolve()

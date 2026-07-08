@@ -1,9 +1,0 @@
-{
-  "name": "iron-age-network-lab",
-  "private": true,
-  "version": "0.1.0",
-  "description": "Local browser assets for the Iron Age network GUI",
-  "dependencies": {
-    "leaflet": "1.9.4"
-  }
-}
