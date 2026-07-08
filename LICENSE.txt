@@ -1,0 +1,18 @@
+Proprietary License / All Rights Reserved
+
+Copyright (c) 2026 Timothy Voss
+
+This project, including source code, documentation, user interface, data processing,
+presentations, and all related project files, is protected by copyright.
+
+Use, execution, review, and modification of this project are permitted only for persons
+explicitly invited or authorized by the rights holder.
+
+Distribution, publication, copying, modification, sublicensing, commercial use,
+or making the project available to unauthorized persons is not permitted without prior
+written permission from the rights holder.
+
+Authorized persons may use the project only within the scope of the invitation or authorization granted to them.
+No ownership, copyright, or exploitation rights are transferred.
+
+All rights not expressly granted are reserved.
