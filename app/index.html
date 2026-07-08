@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Eisenzeit-Netzwerk-Labor</title>
+    <link rel="stylesheet" href="/vendor/leaflet.css" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/vendor/leaflet.js"></script>
+    <script src="/app.js?v=4" defer></script>
+  </head>
+  <body>
+    <div id="loading-screen" class="loading-screen">
+      <div class="loading-mark">DC</div>
+      <div>
+        <strong>Netzwerk wird aufgebaut</strong>
+        <span>Fundorte, Münztypen und Wege werden verknüpft …</span>
+      </div>
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">DC</div>
+        <div>
+          <h1>Eisenzeit-Netzwerk-Labor</h1>
+          <p>Explorative Verkehrs- und Münzsimulation</p>
+        </div>
+      </div>
+      <div class="topbar-center">
+        <div class="year-readout">
+          <span>Simulationsjahr</span>
+          <strong id="year-label">250 v. Chr.</strong>
+        </div>
+        <button id="play-button" class="button primary" type="button">
+          <span aria-hidden="true">▶</span> Abspielen
+        </button>
+        <button id="reset-simulation-button" class="button subtle" type="button">
+          Zurücksetzen
+        </button>
+      </div>
+      <div class="topbar-actions">
+        <button id="method-button" class="button subtle" type="button">Methodik</button>
+        <button id="save-button" class="button subtle" type="button">Speichern</button>
+        <button id="export-button" class="button accent" type="button">Export</button>
+        <label class="button subtle file-button">
+          Import
+          <input id="import-file" type="file" accept=".json,application/json" />
+        </label>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar left-sidebar" aria-label="Modellsteuerung">
+        <section class="panel intro-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Datensatz</span>
+              <h2>Netzwerkübersicht</h2>
+            </div>
+            <span id="data-status" class="status-pill">lokal</span>
+          </div>
+          <div class="stat-grid">
+            <div><strong id="site-count">–</strong><span>Fundorte</span></div>
+            <div><strong id="edge-count">–</strong><span>Kanten</span></div>
+            <div><strong id="coin-count">–</strong><span>Münzen</span></div>
+            <div><strong id="type-count">–</strong><span>Typcodes</span></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Zeitraum</span>
+              <h2>200 Jahre in 25er-Schritten</h2>
+            </div>
+          </div>
+          <div class="field-row two-columns">
+            <label>
+              Startjahr
+              <input id="start-year-input" type="number" value="-250" step="25" />
+            </label>
+            <label>
+              Dauer
+              <input id="duration-input" type="number" value="200" min="25" max="1000" step="25" />
+            </label>
+          </div>
+          <input id="timeline-slider" class="range" type="range" min="0" max="8" step="1" value="0" />
+          <div class="timeline-ticks">
+            <span>Start</span><span id="step-label">Schritt 0 / 8</span><span>Ende</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Startverteilung</span>
+              <h2>Münzen auf Knoten</h2>
+            </div>
+          </div>
+          <div class="button-stack">
+            <button id="seed-finds-button" class="button wide" type="button">
+              Fundmengen aus CSV übernehmen
+            </button>
+            <button id="clear-coins-button" class="button wide subtle" type="button">
+              Alle Startmengen auf 0
+            </button>
+          </div>
+          <p class="hint">Einzelne Startmengen bearbeitest du durch Klick auf einen Knoten.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Modellgewichte</span>
+              <h2>Handelsleitfähigkeit</h2>
+            </div>
+          </div>
+          <label class="slider-field">
+            <span>Münz-Proxy <output id="coin-weight-output">0,75</output></span>
+            <input id="coin-weight" class="range" type="range" min="0" max="3" step="0.05" value="0.75" />
+          </label>
+          <label class="slider-field">
+            <span>Kontaktreichweite <output id="distance-scale-output">120 km</output></span>
+            <input id="distance-scale" class="range" type="range" min="25" max="400" step="5" value="120" />
+          </label>
+          <label class="slider-field">
+            <span>Umlaufintensität/Jahr <output id="diffusion-output">4 %</output></span>
+            <input id="diffusion-rate" class="range" type="range" min="0" max="0.2" step="0.005" value="0.04" />
+          </label>
+          <p class="hint">Die 25-Jahres-Schritte werden intern quartalsweise und massenerhaltend aus der Reisezeit berechnet.</p>
+          <label class="switch-row">
+            <span>
+              Undatierte Münztypen
+              <small>für Proxy und Bewegung berücksichtigen</small>
+            </span>
+            <input id="include-undated-coins" type="checkbox" checked />
+          </label>
+          <div class="button-row">
+            <button id="modes-button" class="button subtle" type="button">Verkehrsmodi</button>
+            <button id="coin-periods-button" class="button subtle" type="button">Münzdatierung</button>
+          </div>
+          <button id="type-filter-button" class="button wide subtle" type="button">Typfilter</button>
+          <p id="type-filter-status" class="hint">Typfilter: alle Typen</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Kartenschichten</span>
+              <h2>Evidenz & Hypothesen</h2>
+            </div>
+          </div>
+          <label class="check-row"><input id="show-edges" type="checkbox" checked /> Hypothesenkanten</label>
+          <label class="check-row"><input id="show-rivers" type="checkbox" /> Itiner-e Flüsse</label>
+          <label class="check-row"><input id="show-roads" type="checkbox" /> Itiner-e Straßen</label>
+          <label class="check-row"><input id="show-sea" type="checkbox" /> Itiner-e Seerouten</label>
+          <label class="check-row"><input id="show-labels" type="checkbox" /> Knotennamen</label>
+          <div id="mode-filters" class="mode-filter-grid"></div>
+          <p class="warning-note">
+            Itiner-e ist eine römische Vergleichsgrundlage, kein automatischer Beleg für eisenzeitliche Wege.
+          </p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Netzgenerator</span>
+              <h2>Nicht-römische Verbindungen</h2>
+            </div>
+          </div>
+          <div class="field-row two-columns">
+            <label>
+              Nachbarn k
+              <input id="k-neighbors-input" type="number" value="3" min="1" max="8" />
+            </label>
+            <label>
+              Max. Distanz
+              <input id="max-distance-input" type="number" value="180" min="20" max="500" step="10" />
+            </label>
+          </div>
+          <button id="regenerate-edges-button" class="button wide" type="button">Kanten neu erzeugen</button>
+          <p class="hint">k-Nachbarn + minimaler Spannbaum; Flussnähe kann den Modus automatisch ändern.</p>
+        </section>
+      </aside>
+
+      <main class="map-area">
+        <div id="map" aria-label="Interaktive Karte des Fundortnetzwerks"></div>
+        <div class="map-toolbar">
+          <button id="fit-map-button" class="icon-button" type="button" title="Alle Fundorte zeigen">⌂</button>
+          <button id="add-edge-button" class="icon-button text-icon" type="button" title="Kante hinzufügen">＋ Kante</button>
+          <label class="map-search">
+            <span class="sr-only">Fundort suchen</span>
+            <input id="node-search" list="node-options" type="search" placeholder="Fundort suchen …" />
+            <datalist id="node-options"></datalist>
+          </label>
+        </div>
+        <div id="edge-add-banner" class="map-banner" hidden>
+          <strong>Neue Kante:</strong>
+          <span id="edge-add-instruction">ersten Knoten wählen</span>
+          <button id="cancel-edge-add-button" type="button">Abbrechen</button>
+        </div>
+        <div class="legend">
+          <div class="legend-title">Münzmenge im gewählten Jahr</div>
+          <div class="gradient-bar"></div>
+          <div class="legend-scale"><span>0</span><span>hoch</span></div>
+          <div class="legend-samples">
+            <span><i class="node-sample small"></i>kleiner Fundort</span>
+            <span><i class="node-sample large"></i>großer Fundort</span>
+          </div>
+        </div>
+        <div class="simulation-summary">
+          <div>
+            <span>Gesamtmenge</span>
+            <strong id="total-coins-current">0</strong>
+          </div>
+          <div>
+            <span>Aktive Kanten</span>
+            <strong id="active-edge-count">0</strong>
+          </div>
+          <div>
+            <span>Stärkster Knoten</span>
+            <strong id="top-node-current">–</strong>
+          </div>
+          <svg id="distribution-sparkline" viewBox="0 0 240 44" role="img" aria-label="Konzentrationsverlauf"></svg>
+        </div>
+      </main>
+
+      <aside class="sidebar right-sidebar" aria-label="Ausgewähltes Element">
+        <div id="empty-inspector" class="empty-inspector">
+          <div class="empty-glyph">◎</div>
+          <h2>Knoten oder Kante wählen</h2>
+          <p>Hier kannst du Siedlungsgröße, Startmünzen, Verkehrsmodus, Handelsstärke und Evidenz bearbeiten.</p>
+        </div>
+
+        <div id="node-inspector" class="inspector" hidden>
+          <div class="inspector-header">
+            <span class="eyebrow">Fundort</span>
+            <h2 id="node-name">–</h2>
+            <button class="close-inspector" type="button" aria-label="Auswahl schließen">×</button>
+          </div>
+          <div class="coordinate-line" id="node-coordinate">–</div>
+          <div class="field-row two-columns">
+            <label>
+              Siedlungsgröße
+              <input id="node-size-input" type="number" min="0.1" max="100" step="0.1" />
+            </label>
+            <label>
+              Startmünzen
+              <input id="node-coins-input" type="number" min="0" step="1" />
+            </label>
+          </div>
+          <div class="inspector-card">
+            <span>Aktuelle Münzmenge</span>
+            <strong id="node-current-coins">0</strong>
+            <small id="node-size-basis">–</small>
+          </div>
+          <dl class="fact-list">
+            <div><dt>Funde in CSV</dt><dd id="node-find-count">–</dd></div>
+            <div><dt>Typcodes</dt><dd id="node-type-count">–</dd></div>
+            <div><dt>Typfilter-Funde</dt><dd id="node-filtered-count">–</dd></div>
+            <div><dt>Koordinaten</dt><dd id="node-coordinate-quality">–</dd></div>
+          </dl>
+          <h3>Archäologische Kontexte</h3>
+          <div id="node-contexts" class="tag-list"></div>
+          <h3>Häufigste Münztypen</h3>
+          <div id="node-coin-types" class="rank-list"></div>
+          <h3>Aktuelle Typverteilung</h3>
+          <div id="node-current-types" class="rank-list type-flow-list"></div>
+          <div class="button-stack">
+            <button id="node-type-distribution-button" class="button wide subtle" type="button">Typmengen bearbeiten</button>
+            <button id="node-seed-100-button" class="button wide" type="button">100 Münzen hier starten</button>
+            <button id="node-edge-source-button" class="button wide subtle" type="button">Von hier neue Kante</button>
+          </div>
+          <details class="source-details">
+            <summary>Quellen & URIs</summary>
+            <div id="node-sources"></div>
+          </details>
+        </div>
+
+        <div id="edge-inspector" class="inspector" hidden>
+          <div class="inspector-header">
+            <span class="eyebrow">Verbindung</span>
+            <h2 id="edge-title">–</h2>
+            <button class="close-inspector" type="button" aria-label="Auswahl schließen">×</button>
+          </div>
+          <label>
+            Verkehrsmodus
+            <select id="edge-mode-select"></select>
+          </label>
+          <label class="slider-field">
+            <span>Handelsstärke <output id="edge-strength-output">5</output></span>
+            <input id="edge-strength-input" class="range" type="range" min="0" max="20" step="0.25" />
+          </label>
+          <label class="switch-row">
+            <span>Kante aktiv</span>
+            <input id="edge-enabled-input" type="checkbox" />
+          </label>
+          <div class="metric-grid">
+            <div><span>Distanz</span><strong id="edge-distance">–</strong></div>
+            <div><span>Reisezeit</span><strong id="edge-travel-time">–</strong></div>
+            <div><span>Reisen/Jahr</span><strong id="edge-trips-year">–</strong></div>
+            <div><span>norm. Handel</span><strong id="edge-normalized-trade">–</strong></div>
+            <div><span>Leitfähigkeit</span><strong id="edge-conductance">–</strong></div>
+          </div>
+          <div class="inspector-card coin-card">
+            <span>Münzähnlichkeit</span>
+            <strong id="edge-coin-proxy">–</strong>
+            <small id="edge-shared-coins">–</small>
+          </div>
+          <h3>Wegevidenz</h3>
+          <p id="edge-route-basis" class="body-copy">–</p>
+          <p id="edge-terrain-method" class="hint">–</p>
+          <a id="edge-evidence-link" class="source-link" href="#" target="_blank" rel="noreferrer" hidden>Itiner-e Segment öffnen ↗</a>
+          <button id="delete-edge-button" class="button wide danger" type="button">Kante löschen</button>
+        </div>
+      </aside>
+    </div>
+
+    <dialog id="modes-dialog" class="modal">
+      <form method="dialog">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">Editierbare Annahmen</span>
+            <h2>Verkehrsmodi</h2>
+          </div>
+          <button class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <p>Geschwindigkeit bestimmt die reale Reisezeit; Kosten, Kapazität und Hangempfindlichkeit filtern daraus die jährliche Abwanderung über eine Kante.</p>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr><th>Modus</th><th>km/h</th><th>Kosten</th><th>Kapazität</th><th>Hang</th></tr>
+            </thead>
+            <tbody id="modes-table-body"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button id="reset-modes-button" class="button subtle" type="button">Defaults</button>
+          <button id="apply-modes-button" class="button primary" type="button">Übernehmen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="coin-periods-dialog" class="modal wide-modal">
+      <form method="dialog">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">Zeitgleiche Münzen</span>
+            <h2>Typdatierungen ergänzen</h2>
+          </div>
+          <button class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <p>
+          Die CSV enthält keine Datierungen. Ergänze Start- und Endjahr je exaktem Typcode
+          (negative Werte = v. Chr.), damit Münztypen pro Zeitschritt nur in ihrem aktiven Zeitraum wandern.
+        </p>
+        <div class="coin-period-toolbar">
+          <input id="coin-period-search" type="search" placeholder="Typcode suchen …" />
+          <label class="button subtle file-button">
+            CSV importieren
+            <input id="coin-period-file" type="file" accept=".csv,text/csv" />
+          </label>
+          <button id="export-coin-periods-button" class="button subtle" type="button">CSV-Vorlage</button>
+        </div>
+        <div class="table-scroll tall">
+          <table class="data-table">
+            <thead>
+              <tr><th>Typcode</th><th>Funde</th><th>Fundorte</th><th>von</th><th>bis</th></tr>
+            </thead>
+            <tbody id="coin-periods-table-body"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <span id="dated-type-count">0 / 0 Typen datiert</span>
+          <button id="apply-coin-periods-button" class="button primary" type="button">Übernehmen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="type-filter-dialog" class="modal wide-modal">
+      <form method="dialog">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">Ausgewählte Münztypen</span>
+            <h2>Typfilter</h2>
+          </div>
+          <button class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <p>
+          Wenn der Typfilter aktiv ist, werden nur ausgewählte Typcodes simuliert, angezeigt
+          und für Münzähnlichkeit genutzt. Datierungsintervalle steuern zusätzlich die Bewegung.
+        </p>
+        <label class="switch-row modal-switch">
+          <span>
+            Typfilter aktiv
+            <small>Simulation, Karte und Proxy auf ausgewählte Typen beschränken</small>
+          </span>
+          <input id="type-filter-enabled" type="checkbox" />
+        </label>
+        <div class="coin-period-toolbar">
+          <input id="type-filter-search" type="search" placeholder="Typcode suchen …" />
+          <button id="type-filter-select-visible-button" class="button subtle" type="button">Sichtbare wählen</button>
+          <button id="type-filter-clear-visible-button" class="button subtle" type="button">Sichtbare abwählen</button>
+        </div>
+        <div class="table-scroll tall">
+          <table class="data-table">
+            <thead>
+              <tr><th>aktiv</th><th>Typcode</th><th>Funde</th><th>Fundorte</th></tr>
+            </thead>
+            <tbody id="type-filter-table-body"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <span id="type-filter-count">Alle Typen ausgewählt</span>
+          <button id="type-filter-apply-start-button" class="button subtle" type="button">Startmengen aus Filter setzen</button>
+          <button id="apply-type-filter-button" class="button primary" type="button">Übernehmen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="node-type-distribution-dialog" class="modal wide-modal">
+      <form method="dialog">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">Typgetrennte Startverteilung</span>
+            <h2 id="node-type-distribution-title">Typmengen bearbeiten</h2>
+          </div>
+          <button class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <p>
+          Jede Zeile ist ein eigener Münztyp. Diese Startmengen werden getrennt simuliert;
+          Datierungsintervalle entscheiden danach, in welchen Jahren der Typ wandern darf.
+        </p>
+        <div class="coin-period-toolbar">
+          <input id="node-type-distribution-search" type="search" placeholder="Typcode suchen …" />
+          <button id="node-type-from-csv-button" class="button subtle" type="button">CSV/Filter für diesen Knoten</button>
+          <button id="node-type-clear-button" class="button subtle" type="button">Knoten auf 0</button>
+        </div>
+        <div class="table-scroll tall">
+          <table class="data-table">
+            <thead>
+              <tr><th>Typcode</th><th>CSV-Funde</th><th>Zeitraum</th><th>Start</th><th>Aktuell</th></tr>
+            </thead>
+            <tbody id="node-type-distribution-body"></tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <span id="node-type-distribution-total">0 Münzen</span>
+          <button id="apply-node-type-distribution-button" class="button primary" type="button">Übernehmen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="method-dialog" class="modal wide-modal">
+      <form method="dialog">
+        <div class="modal-header">
+          <div>
+            <span class="eyebrow">Transparenz</span>
+            <h2>Was das Modell tut – und was nicht</h2>
+          </div>
+          <button class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <div class="method-grid">
+          <article>
+            <h3>1. Fundorte</h3>
+            <p>Die Knoten stammen aus der Fundort-CSV. Koordinaten werden aus den dort verknüpften GeoNames-IDs gelesen; zwei fehlende Links nutzen dokumentierte Näherungen.</p>
+          </article>
+          <article>
+            <h3>2. Nicht-römische Wege</h3>
+            <p>Die Grundkanten entstehen als k-Nachbarschaft plus minimaler Spannbaum. Das erzeugt prüfbare Verbindungshypothesen, keine behaupteten Altstraßen.</p>
+          </article>
+          <article>
+            <h3>3. LCP-Grenze</h3>
+            <p>Die beigefügte PDF beschreibt Multi-Resolution-LCP auf einer Raster-Kostenfläche. Ohne vollständiges DEM/Landcover wird hier nur ein Endpunkthöhen-Proxy genutzt. Exakte QGIS-LCP-Geometrien können später als Kanten importiert werden.</p>
+          </article>
+          <article>
+            <h3>4. Wasserwege</h3>
+            <p>Fundorte nahe demselben Itiner-e-Flusssegment erhalten eine Flussroute. Geschwindigkeit, Kosten und Kapazität bestimmen Reisezeit, Reisen pro Jahr und Kantenleitfähigkeit; Fahrtrichtung und Saison fehlen derzeit.</p>
+          </article>
+          <article>
+            <h3>5. Größenkorrektur</h3>
+            <p><code>normierter Handel = Stärke / √(Größe A × Größe B)</code>. Dadurch ist Stärke 5 zwischen zwei 5er-Siedlungen gewichtiger als zwischen zwei 10er-Siedlungen.</p>
+          </article>
+          <article>
+            <h3>6. Münz-Proxy</h3>
+            <p>Gemeinsame exakte Typcodes erhöhen optional die Leitfähigkeit. Der Typfilter beschränkt Simulation, Karte und Proxy auf ausgewählte Typcodes. Typdatierungen steuern, wann einzelne Typen wandern dürfen.</p>
+          </article>
+        </div>
+        <div class="modal-actions">
+          <button id="method-close-button" class="button primary" type="button">Verstanden</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

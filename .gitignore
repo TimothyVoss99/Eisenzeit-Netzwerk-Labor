@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# JavaScript dependencies
+node_modules/
+
+# Local runtime and environment files
+.env
+.env.*
+.cache/
+
+# Generated or temporary project artifacts
+tmp/
+work/
+output/
+*.inspect.ndjson
+
+# Local saved scenarios
+data/saved_scenario.json
+data/saved_scenario.tmp
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
