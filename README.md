@@ -1,4 +1,3 @@
-# Eisenzeit-Netzwerk-Labor
 
 Lokale Webanwendung zur explorativen Modellierung von Fundorten, Verbindungshypothesen, Transportwegen und typgetrennter Münzzirkulation in einem editierbaren Graphen.
 
@@ -187,6 +186,8 @@ Typischer Arbeitsablauf:
 7. Knoteninspektor für aktuelle Münzmengen und Typverteilungen nutzen.
 8. Szenario als JSON exportieren.
 
+Hinweis zur Laufzeit: Nach dem Laden der tatsächlichen Münzverteilung können einzelne Menüschritte oder Neuberechnungen bis zu etwa einer Minute benötigen. Dieses Verhalten wurde bei großen Datensätzen beobachtet; ein Absturz der Anwendung wurde dabei bislang nicht festgestellt.
+
 ## Mathematische Modellbestandteile
 
 ### Größenkorrigierte Handelsstärke
@@ -304,3 +305,4 @@ Für dieses Repository ist noch keine Lizenzdatei hinterlegt. Vor einer Veröffe
 - [GeoNames](https://www.geonames.org/)
 - [USGS SRTM](https://www.usgs.gov/centers/eros/science/usgs-eros-archive-digital-elevation-shuttle-radar-topography-mission-srtm)
 - Tang & Dou 2023: *An Effective Method for Computing the Least-Cost Path Using a Multi-Resolution Raster Cost Surface Model*
+
