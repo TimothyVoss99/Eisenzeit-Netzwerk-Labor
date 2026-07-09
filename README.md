@@ -193,16 +193,26 @@ Hinweis zur Laufzeit: Nach dem Laden der tatsächlichen Münzverteilung können 
 ### Größenkorrigierte Handelsstärke
 
 ```text
-H_ij = s_ij / sqrt(size_i * size_j)
+H_ij(alpha) = s_ij / (sqrt(size_i * size_j) ^ alpha)
 ```
 
-Damit wird dieselbe absolute Kantenstärke zwischen kleineren Siedlungen relativ stärker gewichtet als zwischen größeren Zentren.
+`alpha` ist der globale Regler `Siedlungsnormalisierung`.
+
+- `alpha = 1`: volle Normalisierung wie in der Formel der Präsentation.
+- `alpha = 0`: keine Größenkorrektur; die rohe Handelsstärke der Kante wird verwendet.
+- Werte dazwischen schwächen die Größenkorrektur kontinuierlich ab.
+
+Damit wird dieselbe absolute Kantenstärke zwischen kleineren Siedlungen relativ stärker gewichtet als zwischen größeren Zentren, sofern die Normalisierung aktiv ist.
 
 ### Reisezeit
 
 ```text
-travel_time_ij = distance_ij * terrain_factor_ij / speed_mode
+terrain_penalty_ij = tau_ij ^ slope_penalty_mode
+
+travel_time_ij = distance_ij * terrain_penalty_ij / speed_mode
 ```
+
+`tau_ij` ist der kantenindividuelle Terrainfaktor. Er wird beim Netzaufbau aus einem einfachen Terrain-Proxy vorbelegt und kann im Kanteninspektor pro Kante überschrieben werden. Die Hangempfindlichkeit des Verkehrsmodus bestimmt, wie stark dieser Terrainfaktor die Reisezeit tatsächlich verändert.
 
 Die Reisezeit wird in eine gesättigte Reisechance überführt:
 

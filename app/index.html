@@ -120,6 +120,10 @@
             <input id="coin-weight" class="range" type="range" min="0" max="3" step="0.05" value="0.75" />
           </label>
           <label class="slider-field">
+            <span>Siedlungsnormalisierung <output id="size-normalization-output">1,00</output></span>
+            <input id="size-normalization" class="range" type="range" min="0" max="1" step="0.05" value="1" />
+          </label>
+          <label class="slider-field">
             <span>Kontaktreichweite <output id="distance-scale-output">120 km</output></span>
             <input id="distance-scale" class="range" type="range" min="25" max="400" step="5" value="120" />
           </label>
@@ -291,6 +295,10 @@
             <span>Handelsstärke <output id="edge-strength-output">5</output></span>
             <input id="edge-strength-input" class="range" type="range" min="0" max="20" step="0.25" />
           </label>
+          <label class="slider-field">
+            <span>Terrainfaktor τ<sub>ij</sub> <output id="edge-terrain-output">1,00</output></span>
+            <input id="edge-terrain-input" class="range" type="range" min="1" max="5" step="0.05" />
+          </label>
           <label class="switch-row">
             <span>Kante aktiv</span>
             <input id="edge-enabled-input" type="checkbox" />
@@ -299,6 +307,7 @@
             <div><span>Distanz</span><strong id="edge-distance">–</strong></div>
             <div><span>Reisezeit</span><strong id="edge-travel-time">–</strong></div>
             <div><span>Reisen/Jahr</span><strong id="edge-trips-year">–</strong></div>
+            <div><span>Terrain-Malus</span><strong id="edge-terrain-penalty">–</strong></div>
             <div><span>norm. Handel</span><strong id="edge-normalized-trade">–</strong></div>
             <div><span>Leitfähigkeit</span><strong id="edge-conductance">–</strong></div>
           </div>
@@ -475,11 +484,11 @@
           </article>
           <article>
             <h3>4. Wasserwege</h3>
-            <p>Fundorte nahe demselben Itiner-e-Flusssegment erhalten eine Flussroute. Geschwindigkeit, Kosten und Kapazität bestimmen Reisezeit, Reisen pro Jahr und Kantenleitfähigkeit; Fahrtrichtung und Saison fehlen derzeit.</p>
+            <p>Fundorte nahe demselben Itiner-e-Flusssegment erhalten eine Flussroute. Geschwindigkeit, Kosten, Kapazität und der kantenindividuelle Terrainfaktor τ<sub>ij</sub> bestimmen Reisezeit, Reisen pro Jahr und Kantenleitfähigkeit; Fahrtrichtung und Saison fehlen derzeit.</p>
           </article>
           <article>
             <h3>5. Größenkorrektur</h3>
-            <p><code>normierter Handel = Stärke / √(Größe A × Größe B)</code>. Dadurch ist Stärke 5 zwischen zwei 5er-Siedlungen gewichtiger als zwischen zwei 10er-Siedlungen.</p>
+            <p><code>normierter Handel = Stärke / (√(Größe A × Größe B))^α</code>. Der globale Regler α schwächt die Normalisierung ab: 1 entspricht der Folienformel, 0 schaltet sie aus.</p>
           </article>
           <article>
             <h3>6. Münz-Proxy</h3>

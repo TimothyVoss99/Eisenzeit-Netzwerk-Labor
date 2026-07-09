@@ -28,6 +28,7 @@ const state = {
     durationYears: 200,
     stepYears: 25,
     coinWeight: 0.75,
+    sizeNormalization: 1,
     distanceScale: 120,
     diffusionRate: 0.04,
     includeUndatedCoins: true,
@@ -350,10 +351,14 @@ function edgeMetrics(edge, year = currentYear()) {
   const mode = state.transportModes[edge.mode] || state.transportModes.pack_animal;
   const sourceSize = Math.max(0.1, Number(source?.size || 1));
   const targetSize = Math.max(0.1, Number(target?.size || 1));
+  const rawStrength = Math.max(0, Number(edge.strength || 0));
+  const sizeNormalization = clamp(Number(state.settings.sizeNormalization ?? 1), 0, 1);
+  const sizeNormalizer = Math.sqrt(sourceSize * targetSize);
   const normalizedTrade =
-    Math.max(0, Number(edge.strength || 0)) / Math.sqrt(sourceSize * targetSize);
+    rawStrength / Math.max(0.0001, Math.pow(sizeNormalizer, sizeNormalization));
+  const terrainFactor = Math.max(1, Number(edge.terrainFactor || 1));
   const terrainPenalty = Math.pow(
-    Math.max(1, Number(edge.terrainFactor || 1)),
+    terrainFactor,
     Math.max(0, Number(mode.slopePenalty || 0)),
   );
   const travelTime =
@@ -375,7 +380,10 @@ function edgeMetrics(edge, year = currentYear()) {
     normalizedTrade * distanceFactor * modeFactor * travelOpportunity * coinFactor;
   return {
     normalizedTrade,
+    sizeNormalization,
+    sizeNormalizer,
     distanceFactor,
+    terrainFactor,
     terrainPenalty,
     travelOpportunity,
     possibleTripsPerYear,
@@ -1003,6 +1011,9 @@ function selectEdge(edgeId) {
   fillEdgeModeSelect(edge.mode);
   $("#edge-strength-input").value = String(edge.strength);
   $("#edge-strength-output").textContent = numberFormat.format(edge.strength);
+  const terrainFactor = Math.max(1, Number(edge.terrainFactor || 1));
+  $("#edge-terrain-input").value = String(clamp(terrainFactor, 1, 5));
+  $("#edge-terrain-output").textContent = numberFormat.format(terrainFactor);
   $("#edge-enabled-input").checked = Boolean(edge.enabled);
   $("#edge-route-basis").textContent = edge.waterway
     ? `${edge.routeBasis}: ${edge.waterway}`
@@ -1035,6 +1046,7 @@ function refreshEdgeMetrics(edge) {
   $("#edge-travel-time").textContent = `${numberFormat.format(metrics.travelTime)} h`;
   $("#edge-trips-year").textContent =
     `${numberFormat.format(metrics.possibleTripsPerYear)}×`;
+  $("#edge-terrain-penalty").textContent = numberFormat.format(metrics.terrainPenalty);
   $("#edge-normalized-trade").textContent = numberFormat.format(metrics.normalizedTrade);
   $("#edge-conductance").textContent = numberFormat.format(metrics.conductance);
   $("#edge-coin-proxy").textContent = numberFormat.format(metrics.coinProxy);
@@ -1304,6 +1316,11 @@ function applyScenario(scenario) {
     0,
     0.2,
   );
+  state.settings.sizeNormalization = clamp(
+    Number(state.settings.sizeNormalization ?? 1),
+    0,
+    1,
+  );
   if (scenario.typeFilter) {
     state.typeFilter.enabled = Boolean(scenario.typeFilter.enabled);
     const knownTypes = new Set(state.coinTypes.map((item) => item.type));
@@ -1349,10 +1366,14 @@ function syncControlsFromState() {
   $("#start-year-input").value = String(state.settings.startYear);
   $("#duration-input").value = String(state.settings.durationYears);
   $("#coin-weight").value = String(state.settings.coinWeight);
+  $("#size-normalization").value = String(state.settings.sizeNormalization ?? 1);
   $("#distance-scale").value = String(state.settings.distanceScale);
   $("#diffusion-rate").value = String(state.settings.diffusionRate);
   $("#include-undated-coins").checked = state.settings.includeUndatedCoins;
   $("#coin-weight-output").textContent = numberFormat.format(state.settings.coinWeight);
+  $("#size-normalization-output").textContent = numberFormat.format(
+    state.settings.sizeNormalization ?? 1,
+  );
   $("#distance-scale-output").textContent =
     `${integerFormat.format(state.settings.distanceScale)} km`;
   $("#diffusion-output").textContent = formatPercent(state.settings.diffusionRate);
@@ -1536,6 +1557,13 @@ function attachEvents() {
     $("#coin-weight-output").textContent = numberFormat.format(state.settings.coinWeight);
     runSimulation();
   });
+  $("#size-normalization").addEventListener("input", (event) => {
+    state.settings.sizeNormalization = clamp(Number(event.target.value), 0, 1);
+    $("#size-normalization-output").textContent = numberFormat.format(
+      state.settings.sizeNormalization,
+    );
+    runSimulation();
+  });
   $("#distance-scale").addEventListener("input", (event) => {
     state.settings.distanceScale = Number(event.target.value);
     $("#distance-scale-output").textContent =
@@ -1691,6 +1719,15 @@ function attachEvents() {
     const edge = state.edges.find((item) => item.id === state.selected.id);
     edge.strength = Number(event.target.value);
     $("#edge-strength-output").textContent = numberFormat.format(edge.strength);
+    runSimulation();
+  });
+  $("#edge-terrain-input").addEventListener("input", (event) => {
+    if (state.selected?.type !== "edge") return;
+    const edge = state.edges.find((item) => item.id === state.selected.id);
+    edge.terrainFactor = clamp(Number(event.target.value || 1), 1, 5);
+    edge.terrainMethod = "Manuell gesetzter Terrainfaktor τ_ij; kein vollständiges DEM-LCP";
+    $("#edge-terrain-output").textContent = numberFormat.format(edge.terrainFactor);
+    $("#edge-terrain-method").textContent = edge.terrainMethod;
     runSimulation();
   });
   $("#edge-enabled-input").addEventListener("change", (event) => {
